@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Fetch Image Data Example</title>
+</head>
+<body>
+    <img id="image" src="" alt="Image">
+    <script>
+        let request = new XMLHttpRequest();
+        let url = "http://3dmap/php/r_image.php";
+        let data = new FormData();
+        data.append("type", "tile");
+        data.append("level", "13");
+        data.append("row", "2977");
+        data.append("col", "6058");
+        request.open("POST", url, true);
+        request.send(data);
+    
+
+        request.onreadystatechange = function() {
+            if (request.readyState === 4 && request.status === 200) {
+                let imageUrl = request.responseText;
+          document.getElementById("image").src = imageUrl;
+            }
+        };
+
+       
+    </script>
+</body>
+</html>

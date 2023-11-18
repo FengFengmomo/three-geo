@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style type="text/css"> body { margin: 0; } </style>
+
+    <link rel="stylesheet" href="./leaflet.css" />
+    <!-- <style type="text/css"> .leaflet-container { background-color: rgba(0, 0, 0, 0.4); } </style> -->
+
+    <!-- copied node_modules/leaflet-geosearch/assets/css/leaflet.css -->
+    <link rel="stylesheet" href="./assets/css/leaflet.css" />
+
+    <!-- <script type="module" src="https://cdn.ampproject.org/v0/bento-youtube-1.0.mjs" crossorigin="anonymous"></script> -->
+    <!-- <link rel="stylesheet" href="https://cdn.ampproject.org/v0/bento-youtube-1.0.css" crossorigin="anonymous"> -->
+    <style type="text/css"> bento-youtube { height: 320px; width: 100%; } </style>
+</head>
+<body>
+    <canvas id="viewer" style="width: 100%; height: 100%;"></canvas>
+
+    <div id="map-wrapper" style="position: absolute; z-index: 100;
+        width: 520px; height: 320px; top: 0px; left: 0px;">
+        <div id="map" style="height: 100%;"></div>
+    </div>
+    <div id="media-wrapper" style="position: absolute; z-index: 100; display: none; background: #424242;
+        width: 520px; height: 320px; top: 320px; left: 0px;">
+        <div id="media" style="height: 100%;"></div>
+    </div>
+
+    <script src="../../deps/three/build/three.min.js"></script>
+    <script src="../../deps/three/examples/js/controls/OrbitControls.js"></script>
+    <script src="../target/app.min.js"></script>
+    <script type="module">
+        // import App from './app.esm.dev.js';
+        // import App from './app.min.js';
+        // import App from '../src/index.js';
+        const app = new App();
+        window.app = app;
+    </script>
+</body>
+</html>
