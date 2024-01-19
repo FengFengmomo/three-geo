@@ -41,29 +41,18 @@ class Fetch {
                 break;
             case 'mapbox-terrain-rgb':
                 // https://docs.mapbox.com/help/troubleshooting/access-elevation-data/#mapbox-terrain-rgb
-                
-                if(1){
-                    prefix = 'http://1.14.101.52/map_data/tile';
-                    prefix = '../map_data/terrain';
-                    middle = 'terrain_rgb_';
-                    res = '.png';
-                } else{
-                    prefix = 'https://api.mapbox.com/v4/mapbox.terrain-rgb';
-                    res = '@2x.pngraw';
-                }
+                prefix = 'http://1.14.101.52/map_data/tile';
+                prefix = '../map_data/terrain';
+                middle = 'terrain_rgb_';
+                res = '.png';
                 break;
+                
             case 'mapbox-satellite':
                 // https://docs.mapbox.com/help/troubleshooting/migrate-legacy-static-images-api/
                 // https://docs.mapbox.com/api/maps/#static-tiles
-                if(1){
-                    prefix = 'http://1.14.101.52/map_data/terrain';
-                    prefix = '../map_data/tile';
-                    middle = 'tile_';
-                    res = '.png'
-                } else {
-                    prefix = 'https://api.mapbox.com/styles/v1/mapbox/satellite-v9/tiles';
-                    
-                }
+                prefix = '../map_data/tile';
+                middle = 'tile_';
+                res = '.png';
                 // zoompos[0] -=2;
                 break;
             default:
@@ -71,7 +60,8 @@ class Fetch {
                 return '';
         }
         // return `${prefix}/${zoompos.join('/')}${res}?access_token=${token}`;
-        return `${prefix}/${zoompos[0]}/${middle}${zoompos.join('_')}${res}`;
+        // return `${prefix}/${zoompos[0]}/${middle}${zoompos.join('_')}${res}`;
+        return `${prefix}/${zoompos[0]}/${zoompos[1]}/${zoompos[2]}${res}`;
     }
 
     static dumpBufferAsBlob(buffer, name) {

@@ -26,6 +26,7 @@ class App extends Threelet {
 
         this.camera.position.set(0, 0, 0.8);
         this.camera.up.set(0, 0, 1); // 摄像头方向，沿着z轴正方向
+        this.cameraZoom = this.camera.zoom;
         this.renderer.autoClear = false;
         this.currentX = null; // 放缩时 当前鼠标的坐标
         this.currentY = null; //
@@ -198,8 +199,8 @@ class App extends Threelet {
         // https://docs.mapbox.com/data/tilesets/guides/access-elevation-data/#mapbox-terrain-rgb
         // vector dem: 9--15 (at 8, no contour data returned)
         //    rbg dem: ?--15
-        const zoom = env.zoom || 13; // satellite zoom resolution -- min: 11, defaut: 13, max: 17
-        const radius = 5.0 * 2**(13 - zoom);
+        const zoom = env.zoom || 16; // satellite zoom resolution -- min: 11, defaut: 13, max: 17
+        const radius = 5.0 * 2**(14 - zoom);
 
         return { origin, radius, zoom, vis, title };
     }
@@ -212,7 +213,8 @@ class App extends Threelet {
         const ttl = params.get('title');
 
         // const fallback = [ [ 36.2058, -112.4413 ], 'Colorado River' ];
-        const fallback = [ [43.85, 86.40], 's101' ];
+        // const fallback = [ [43.85, 87.40], 's101' ];
+        const fallback = [ [-43.7248528,87.11788150000001], 's101' ];
 
         const [ origin, title ] = (lat && lng) ?
             [ [ Number(lat), Number(lng) ], ttl ] : fallback;
