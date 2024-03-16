@@ -1,6 +1,7 @@
 import Stats from 'three/examples/jsm/libs/stats.module';
 
 // 组件
+// 不需要
 class Widget {
     constructor() {
         const stats = new Stats();

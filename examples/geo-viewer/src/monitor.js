@@ -2,6 +2,7 @@ import { StatsWidget, ClockWidget } from './widgets.js';
 
 
 // view data更新
+// 不需要
 class Mon {
     constructor(env) {
         const dom = document.createElement('div');

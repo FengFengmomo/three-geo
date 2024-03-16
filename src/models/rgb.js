@@ -6,24 +6,6 @@ import * as THREE from 'three';
 const constVertices = 256;
 // const constTilePixels = new SphericalMercator({size: 128});
 const constTilePixels = new SphericalMercator();
-
-
-const constTilePixels256 = new SphericalMercator();
-
-const computeSeamRows = (shift,totalCount,rowCount) => {
-    // let totalCount = 49152; // 128 * 128 * 3
-    // let rowCount = 384; // 128 * 3
-    let rows = [[],[],[],[]];
-    for (let c = 0; c < rowCount; c += 3) {
-        // 0, 1, 2, 3; north, west, south, east; +y, -x, -y, +x
-        rows[0].push(c+1+shift);
-        rows[1].push(c/3*(rowCount)+1+shift);
-        rows[2].push(c+1+totalCount-rowCount+shift);
-        rows[3].push((c/3+1)*(rowCount)-2+shift);
-    }
-    return rows;
-};
-const constSeamRows = computeSeamRows(1, 256*256*3, 256*3);
 // use shift = 0 when array's format is [x0, z0, y0, x1, z1, y1, ... x127, z127, y127]
 // 0: Array(128) [1, 4, 7, 10, 13, 16, 19, 22, ... 379, 382]
 // 1: Array(128) [1, 385, 769, 1153, 1537, 1921, 2305, 2689, ... 48385, 48769]
@@ -72,11 +54,9 @@ class RgbModel {
         // static parameters
         this.unitsPerMeter = params.unitsPerMeter;
         this.projectCoord = params.projectCoord;
-        this.token = params.token;
         this.isNode = params.isNode;
         this.isDebug = params.isDebug;
         this.apiRgb = params.apiRgb;
-        this.apiSatellite = params.apiSatellite;
 
         // callbacks
         this.onRgbDem = params.onRgbDem; // 空函数
@@ -85,6 +65,27 @@ class RgbModel {
 
         // state variables
         this.dataEleCovered = [];
+    }
+    
+    // compute elevation tiles belonging to the gradparent zoom level
+    // 计算相应缩放级别的高程贴图
+    getZoomposEle(zpArray) {
+        const elevations = {};
+        zpArray.forEach(zoompos => {
+            let grandparent = [
+                zoompos[0]-2,
+                Math.floor(zoompos[1]/4), // Math.floor 向下求整
+                Math.floor(zoompos[2]/4)];
+            if (elevations[grandparent]) {
+                elevations[grandparent].push(zoompos);
+            } else {
+                elevations[grandparent] = [zoompos];
+            }
+        });
+        // console.log('elevations:', elevations);
+
+        return Object.keys(elevations)
+            .map(triplet => triplet.split(',').map(num => parseFloat(num)));
     }
 
     fetch(zpCovered, bbox) {
@@ -97,7 +98,7 @@ class RgbModel {
         let count = 0;
         // 请求高程数据，rgb值的转换
         zpEle.forEach(async zoompos => {
-            const tile = await Fetch.fetchTile(zoompos, this.apiRgb, this.token, this.isNode);
+            const tile = await Fetch.fetchTile(zoompos, this.isNode);
             if (tile !== null) {
                 this.addTile256(tile, zoompos, zpCovered, bbox);
             } else {
@@ -114,12 +115,6 @@ class RgbModel {
     addTile256(tile, zoompos, zpCovered, bbox) {
         this.dataEleCovered = this.dataEleCovered.concat(
             this._addTile256(tile, zoompos, zpCovered, bbox));
-        console.log(`now ${this.dataEleCovered.length} satellite tiles in dataEleCovered`);
-    }
-
-    addTile(tile, zoomposEle, zpCovered, bbox) {
-        this.dataEleCovered = this.dataEleCovered.concat(
-            this._addTile(tile, zoomposEle, zpCovered, bbox));
         console.log(`now ${this.dataEleCovered.length} satellite tiles in dataEleCovered`);
     }
 
@@ -142,7 +137,7 @@ class RgbModel {
         let dataIndex = 0;
         for (let row = 0; row < constVertices; row++) {
             for (let col = 0; col < constVertices; col++) {
-                let lonlatPixel = constTilePixels.ll([
+                let lonlatPixel = constTilePixels.ll([ // 从屏幕点到经纬度x,y
                     zoompos[1] * constVertices + col,
                     zoompos[2] * constVertices + row
                 ], zoompos[0]);
@@ -159,76 +154,6 @@ class RgbModel {
         dataEle.push([zoompos, array, zoompos]);
         return dataEle;
 
-    }
-    _addTile(pixels, zoomposEle, zpCovered, bbox) {
-        const { unitsPerMeter, projectCoord } = this;
-
-        let elevations = [];
-        if (pixels) {
-            let R, G, B;
-            for (let e = 0; e < pixels.data.length; e += 4) {
-                R = pixels.data[e];
-                G = pixels.data[e+1];
-                B = pixels.data[e+2];
-                // 将rgb值转化为高度值
-                // elevations.push(-10000 + ((R * 256 * 256 + G * 256 + B) * 0.1));
-                elevations.push(-10000 + ((R * 256 * 256 + G * 256 + B) * 0.1));
-            }
-        } else {
-            elevations = new Array(262144).fill(0); // 512 * 512 (=1/4 MB)
-        }
-        // console.log('elevations:', elevations); // elevations: (262144) [...]
-
-        // figure out tile coordinates of the 16 grandchildren of this tile
-        // 当前高程所在的地图贴图点为左上角，向下向右各扩展四个，共16个贴图点
-        let sixteenths = [];
-        for (let col = 0; col < 4; col++) {
-            for (let row = 0; row < 4; row++) {
-                sixteenths.push([
-                    zoomposEle[0] + 2,
-                    zoomposEle[1] * 4 + col,
-                    zoomposEle[2] * 4 + row].join('/'));
-            }
-        }
-
-        let zpCoveredStr = zpCovered.map((zp) => { return zp.join('/'); });
-
-        const dataEle = [];
-        sixteenths.forEach((zoomposStr, index) => {
-            if (!zpCoveredStr.includes(zoomposStr)) return;
-
-            let zoompos = zoomposStr.split('/').map(str => parseInt(str));
-            let pxRange = sixteenthPixelRanges[index];
-            let elev = [];
-
-            for (let r = pxRange[0][0]; r < pxRange[0][1]; r++) {
-                for (let c = pxRange[1][0]; c < pxRange[1][1]; c++) {
-                    elev.push(elevations[r * 512 + c]);
-                }
-            }
-            // console.log('elev:', elev); // 16384 = 128 * 128 elements
-
-            let array = [];
-            let dataIndex = 0;
-            for (let row = 0; row < constVertices; row++) {
-                for (let col = 0; col < constVertices; col++) {
-                    let lonlatPixel = constTilePixels.ll([
-                        zoompos[1] * 128 + col,
-                        zoompos[2] * 128 + row
-                    ], zoompos[0]);
-                    // console.log('lonlatPixel:', lonlatPixel);
-                    // NOTE: do use shift = 1 for computeSeamRows()
-                    array.push(
-                        ...projectCoord(lonlatPixel, bbox.northWest, bbox.southEast),
-                        elev[dataIndex] * unitsPerMeter);
-                    dataIndex++;
-                }
-            }
-            // console.log('zoompos, array:', zoompos, array); // 49152 = 128*128*3 elements
-            dataEle.push([zoompos, array, zoomposEle]);
-        });
-        // console.log('dataEle:', dataEle);
-        return dataEle;
     }
 
     static _stitchWithNei2(array, arrayNei) {
@@ -363,8 +288,7 @@ class RgbModel {
         }
 
         const meshes = RgbModel._build(
-            this.dataEleCovered, this.apiSatellite,
-            this.token, this.isNode, onSatelliteMatWrapper);
+            this.dataEleCovered, this.isNode, onSatelliteMatWrapper);
 
         this.onRgbDem(meshes); // legacy API 遗留api
 
@@ -373,7 +297,7 @@ class RgbModel {
         }
     }
 
-    static _build(dataEle, apiSatellite, token, isNode, onSatelliteMatWrapper) {
+    static _build(dataEle, isNode, onSatelliteMatWrapper) {
         console.log('apiSatellite:', apiSatellite);
 
         // dataEle should be sorted so that .resolveSeams() is applied
@@ -401,6 +325,7 @@ class RgbModel {
             console.log('cSegments:', cSegments);
             // w and h don't matter since position.array is being overwritten
             // width and height , width segment and height segment, 缓存几何模型
+            // 修改模型的数据，通知threejs进行更新，如果不可以就采用重新生成的方式。
             let geom = new THREE.PlaneBufferGeometry(
                 1, 1, cSegments[0], cSegments[1]);
             geom.attributes.position.array = new Float32Array(arr);
@@ -423,13 +348,13 @@ class RgbModel {
                 tile: _toTile(zoompos),
                 srcDem: {
                     tile: _toTile(zoomposEle),
-                    uri: Fetch.getUriMapbox(token, 'mapbox-terrain-rgb', zoomposEle),
+                    uri: Fetch.getUri(zoomposEle),
                 },
             };
             plane.receiveShadow = true; // 使该材质可接受光源
             objs.push(plane);
 
-            this.resolveTex(zoompos, apiSatellite, token, isNode, tex => {
+            this.resolveTex(zoompos, isNode, tex => {
                 //console.log(`resolve tex done for ${zoompos}`);
                 if (tex) {
                     // plane.material = new THREE.MeshBasicMaterial({
@@ -451,8 +376,8 @@ class RgbModel {
 
     //==== THREE specific
     // _buildModelThree() {} // TODO (refactor)
-    static async resolveTex(zoompos, apiSatellite, token, isNode, onTex) {
-        const pixels = await Fetch.fetchTile(zoompos, apiSatellite, token, isNode);
+    static async resolveTex(zoompos, isNode, onTex) {
+        const pixels = await Fetch.fetchTile(zoompos, isNode);
 
         let tex = null;
         if (pixels !== null) {

@@ -487,9 +487,34 @@ class App extends Threelet {
     getLatLngByXY(mx, my){
         const isect = this.raycastInteractives(mx, my);
         const pt = isect.point;
-        const { projInv, unitsPerMeter } = this.projection;
+        const {bbox, proj, projInv, unitsPerMeter } = this.projection;
         const llTarget = projInv(pt.x, pt.y);
+        const corrd = proj(llTarget);
+        const lnglat = this._reverseCoord(1.0, [pt.x, pt.y], [bbox[0], bbox[3]], [bbox[2], bbox[1]]);
+        const coord = proj(lnglat);
+        console.log('corrd:', corrd);
+        console.log('coord:', lnglat);
+        console.log('lnglat:', coord);
+        /**
+         * 结果数值说明：
+         * pt值：{"x": 0.04289904896213269,"y": -0.05507770902446131,"z": 0.6815162641226548}
+         * lltarget： [-43.726036560354004,87.1197645174575]
+         * corrd: [0.042833014271223324,-0.05511088341042264]
+         * lnglat值： [87.11976597015558,-43.726036032951335]
+         * 
+         * 结论：1、projInv通过交叉点计算出来的经纬度再换算成坐标和原来的交叉点坐标不一致。
+         *      2、float计算会有精度损失
+         *      3、通过projectCoord方法进行反向计算经纬度也是可以获得projInv同样的效果
+         *      4、通过反向计算的xy结果可以与交点xy的精度保持在小数点后十二位，而projInv计算出来的经纬度换算成经纬度换算成xy，只能保持在3到5的精准度。
+         */
         return llTarget;
+    }
+    // 返回了lng，lat值
+    _reverseCoord(unitsSide,xy, nw,se){
+        return [ 
+            (xy[0]/unitsSide+0.5)*(se[0]-nw[0])+nw[0],
+            (xy[1]/unitsSide+0.5)*(nw[1]-se[1])+se[1]
+        ]
     }
 
     raycastInteractives(mx, my) {

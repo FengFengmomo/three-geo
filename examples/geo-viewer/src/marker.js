@@ -1,6 +1,6 @@
 import ThreeGeo from '../../../src';
 
-// 标记器
+// 地图上的点标记器
 class Marker {
     constructor(scene) {
         this.scene = scene;

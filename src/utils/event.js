@@ -1,5 +1,4 @@
-
-class Utils{
+class Event{
     static preventDefault(e) {
         if (e.preventDefault) {
             e.preventDefault();
@@ -15,5 +14,4 @@ class Utils{
         return this;
     }
 }
-// done
-export default Utils;
+export default Event;

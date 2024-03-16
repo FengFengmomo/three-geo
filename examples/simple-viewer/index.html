@@ -13,7 +13,7 @@
     <script src="../deps/three/examples/js/libs/stats.min.js"></script>
 
     <script src="../../target/three-geo.min.js"></script>
-
+    <script src="../../node_modules\@mapbox\sphericalmercator\sphericalmercator.js"></script>
     <!-- <script type="module"> -->
         <!-- <script type="importmap"> -->
            
@@ -115,6 +115,8 @@
         window.light =light;
         render();
         window.render = render;
+        window.tgeo = tgeo;
+        window.RgbModel = RgbModel;
     })();
     </script>
 </body>
