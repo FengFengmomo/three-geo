@@ -4,16 +4,19 @@ import getPixelsDom from 'get-pixels'; // 'get-pixels/dom-pixels'
 import Meta from 'es-pack-js/src/meta';
 
 class Fetch {
+    static api_terrain = "terrain-rgb";
+    static api_satellite = "satellite";
+    static isNode = null;
     // 获取mapbox的uri链接
-    static getUri(zoompos) {
+    static getUri(api, zoompos) {
         let prefix, res = '', middle;
         switch (api) {
-            case 'mapbox-terrain-rgb':
+            case 'terrain-rgb':
                 prefix = '../map_data/terrain';
                 middle = 'terrain_rgb_';
                 res = '.png';
                 break;
-            case 'mapbox-satellite':
+            case 'satellite':
                 prefix = '../map_data/tile';
                 middle = 'tile_';
                 res = '.png';
@@ -29,8 +32,8 @@ class Fetch {
     }
 
     // 发送具体的请求
-    static async getRgbTile(uri, isNode, res) {
-        const gp = isNode ?
+    static async getRgbTile(uri, res) {
+        const gp = Fetch.isNode ?
             await Meta.nodeRequire(global, 'get-pixels/node-pixels') : getPixelsDom;
         gp(uri, (error, pixels) => res(error ? null : pixels));
     }
@@ -42,16 +45,16 @@ class Fetch {
     }
 
     // 构造请求并发送
-    static fetchTile(zoompos, isNode) {
+    static fetchTile(api, zoompos) {
         const tag = 'fetchTile()';
-        const uri = this.getUri(zoompos);
+        const uri = this.getUri(api, zoompos);
             
         console.log(`${tag}: uri: ${uri}`);
 
         const future = res => {
             let ret = null;
             
-            ret = this.getRgbTile(uri, isNode, res);  // 返回请求的promise              
+            ret = this.getRgbTile(uri, res);  // 返回请求的promise              
             
             return ret;
         };

@@ -1,8 +1,8 @@
 {
-    "name": "three-geo",
+    "name": "app",
     "version": "1.4.6-dev3",
     "description": "3D geographic visualization library",
-    "main": "dist/three-geo.min.js",
+    "main": "dist/app.min.js",
     "directories": {
         "example": "examples"
     },
@@ -10,6 +10,7 @@
         "postinstall": "([ -d './examples' ] && cd ./examples/geo-viewer && npm i || true);",
         "dist": "es-pack build -d ./dist -m umd esm esm-compat",
         "build": "es-pack build -m umd",
+        "build:min": "es-pack build",
         "build:esm": "es-pack build -m esm",
         "build:esm:compat": "es-pack build -m esm-compat",
         "test": "npm run test:verify && npm run test:main && npm run test:viewer",

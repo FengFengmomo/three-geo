@@ -5,7 +5,8 @@ import Env from './env.js';
 import MiniThreeLet from './miniThreeLet/MiniThreeLet.js';
 // import Threelet from '../../deps/threelet/index.js';
 import Light from './light.js';
-import OrbitControls from '../../examples/deps/three/examples/js/controls/OrbitControls.js';
+// import OrbitControls from '../../examples/deps/three/examples/js/controls/OrbitControls.js';
+import TileController from './tileController.js';
 
 const { THREE  } = window;
 const { OrbitControls } = THREE;
@@ -18,7 +19,7 @@ class App extends MiniThreeLet {
     onCreate(_params) { // override
         this.env = Env;
 
-        this.camera.position.set(0, 0, 0.8);
+        this.camera.position.set(0, 0, 2); // 摄像机的xyz位置
         this.camera.up.set(0, 0, 1); // 摄像头方向，沿着z轴正方向
         this.cameraZoom = this.camera.zoom;
         this.renderer.autoClear = false;
@@ -38,18 +39,11 @@ class App extends MiniThreeLet {
 
         this.render = () => { // override
             this._render();
-            this.monitor.updateStats();
-            this.monitor.updateCam(this.camera, this.projection);
-            // this.map.plotCam(this.camera);
         };
         this.setup('mod-controls', OrbitControls);
         this.render(); // first time
-
-        // this.anim = new Anim(this.render, this.onAnimate.bind(this));
-
-        this.monitor.updateTerrain(this.origin, this.zoom);
-        // this.monitor.updateMap(this.map.getZoom());
-        this.monitor.updateCam(this.camera, this.projection);
+        this.tileController.defaultTile();
+        return;
         this.controls = new THREE.OrbitControls(this.camera, this.renderer.domElement);
         this.controls.minPolarAngle = 0;
         this.controls.maxPolarAngle = Math.PI/3;
@@ -62,7 +56,9 @@ class App extends MiniThreeLet {
             // console.log("click complete");
             // this.updateOrbit(mx, my)
         // });
+        // this.renderer.domElement.addEventListener
         this.controls.addEventListener('wheel', (event) => {
+            return;
             // this.controls.enableZoom = false;
             // console.log(event.deltaY);
             this._delta += event.deltaY;
@@ -91,6 +87,7 @@ class App extends MiniThreeLet {
             console.log(mx,my);
         });
         this.controls.addEventListener("mouse-up", (mx,my)=>{
+            return;
             if(this.rightClick === false){
                 return;
             }
@@ -117,7 +114,6 @@ class App extends MiniThreeLet {
         this.renderer.clear();
         this.renderer.render(this.scene, this.camera);
         this.renderer.clearDepth();
-        this.renderer.render(this.marker.scene, this.camera);
     }
 
 
@@ -130,32 +126,16 @@ class App extends MiniThreeLet {
         grids.name = 'singleton-grids';
         this.scene.add(grids);
         this.grids = grids;
-
-        // 加载地形贴图
-
-        const { origin, radius, zoom, vis, title } = App.resolveParams(this.env);
-        const projection = loader.projection(origin, radius);
-
-        this.origin = origin;
-        this.radius = radius;
-        this.zoom = zoom;
-        this.vis = vis;
-        this.projection = projection;
         this.wireframeMat = new THREE.MeshBasicMaterial({ wireframe: true, color: 0x999999 }); // wireframe 网格线
         // 根据title更新地形
-        this.updateTerrain(title);
         // 增加点光源
         this.light = new Light({z:2});
         this.addLight();
         //点光初始化结束
-
+        const refresh = () => { this._render(); };
+        this.tileController = new TileController(this.scene, refresh);
 
     }
-    
-    static capitalizeFirst(str) {
-        return str.charAt(0).toUpperCase() + str.slice(1);
-    }
-
     
     // 清除灯光
     removeLight(){
@@ -170,9 +150,6 @@ class App extends MiniThreeLet {
     // 清空贴图
     clearTerrainObjects() {
         this.renderer.dispose();
-
-        this.loader.doneVec = false;
-        this.loader.doneRgb = false;
         this.loader.clearRgbMaterials();
         this.loader.clearInteractives();
         this.scene.children

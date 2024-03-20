@@ -1,6 +1,8 @@
 import Fetch from './fetch.js';
 import SphericalMercator from '@mapbox/sphericalmercator';
 import * as THREE from 'three';
+import ComputeY from './computeFlyY.js';
+
 const constVertices = 256;
 // const constTilePixels = new SphericalMercator({size: 128});
 const constTilePixels = new SphericalMercator();
@@ -16,17 +18,18 @@ const constTilePixels = new SphericalMercator();
 // 3: Array(128) [383, 767, 1151, 1535, ... 48767, 49151]
 class Loader{
     // 模型加载器
-    constructor(upperLeft, lowerRight, constUnitsSide=1.0){
+    constructor(upperLeft, lowerRight, refresh, constUnitsSide=1.0){
         this.nw = upperLeft;
         this.se = lowerRight;
         this.constUnitsSide = constUnitsSide;
+        this.refresh = refresh; // 场景刷新函数，后续可对更新频率进行更改，消除每次加载都更新
     }
     
     
     async fetch(zoomId){
-        const tile = await Fetch.fetchTile(zoomId, isNode);
+        const tile = await Fetch.fetchTile(Fetch.api_terrain, zoomId);
         if (tile !== null) {
-            const plane = this.addTile256(tile, zoomId, bbox);
+            const plane = this.addTile256(tile, zoomId);
             return plane;
         }
     }
@@ -62,9 +65,11 @@ class Loader{
                 dataIndex++;
             }
         }
+        // todo 这里的constVertices 先设定为255，后续再改为256
+        // 因为这里未进行临接处理
         let geom = new THREE.PlaneBufferGeometry(
-            1, 1, cSegments[0], cSegments[1]);
-        geom.attributes.position.array = new Float32Array(arr);
+            1, 1, constVertices-1, constVertices-1);
+        geom.attributes.position.array = new Float32Array(array);
         let plane = new THREE.Mesh(geom,
             // new THREE.MeshBasicMaterial({   //修改材质，使用可接受光的材质
             new THREE.MeshLambertMaterial({
@@ -73,14 +78,17 @@ class Loader{
             }));
         plane.name = `dem-rgb-${zoompos.join('/')}`;
         plane.userData.threeGeo = {
-            tile: _toTile(zoompos),
+            tile: zoompos,
             srcDem: {
                 tile: zoompos,
-                uri: Fetch.getUri(zoompos),
+                uri: Fetch.getUri(Fetch.api_terrain, zoompos),
             },
         };
         plane.receiveShadow = true;
-        this.resolveTex(zoompos, isNode, tex => {
+        const refresh = () => {
+            this.refresh();
+        }
+        this.resolveTex(zoompos, tex => {
             //console.log(`resolve tex done for ${zoompos}`);
             if (tex) {
                 // plane.material = new THREE.MeshBasicMaterial({
@@ -90,19 +98,23 @@ class Loader{
                     map: tex,
                 });
                 plane.receiveShadow = true;
+                refresh();
             }
         });
         return plane;
 
     }
-    async resolveTex(zoompos, isNode, onTex) {
-        const pixels = await Fetch.fetchTile(zoompos, isNode);
+    async resolveTex(zoompos, onTex) {
+        const pixels = await Fetch.fetchTile(Fetch.api_satellite, zoompos);
 
         let tex = null;
         if (pixels !== null) {
-            tex = new THREE.DataTexture(this.createDataFlipY(pixels.data, pixels.shape),
+            tex = new THREE.DataTexture(ComputeY.createDataFlipY(pixels.data, pixels.shape),
                 pixels.shape[0], pixels.shape[1], THREE.RGBAFormat);
 
+            // tex.needsUpdate = true;
+            // tex = new THREE.DataTexture(pixels.data, pixels.shape[0], pixels.shape[1], THREE.RGBAFormat);
+            // tex.flipY = true;
             tex.needsUpdate = true;
         } else {
             console.log(`fetchTile() failed for tex of zp: ${zoompos}`);
@@ -120,7 +132,9 @@ class Loader{
      * @returns 该经纬度坐标在xyz坐标系的点
      */
     projectCoord(coord, nw=[], se=[]) {
-        return this._projectCoord(this.constUnitsSide, coord, nw, se);
+        let result = this._projectCoord(this.constUnitsSide, coord, nw, se);
+        return result;
+
     }
     // 计算项目坐标, coord为具体的位置上大小，从全世界地图的整体上第多少个像素
     // 修改方案1：在图像分割时确定这两个坐标，并作为参数值进行打包。
@@ -137,6 +151,9 @@ class Loader{
      * 例如：[-43.726036560354004,87.1197645174575]-> [0.042833014271223324,-0.05511088341042264]
      */
     _projectCoord(unitsSide, coord, nw, se) {
+        let px = unitsSide * (-0.5 + (-coord[1]-nw[0]) / (se[0]-nw[0]));
+        let py = unitsSide * (-0.5 - (coord[0]-se[1]) / (se[1]-nw[1]));
+        return [px, py];
         return [ // lng, lat -> px, py
             unitsSide * (-0.5 + (coord[0]-nw[0]) / (se[0]-nw[0])),
             unitsSide * (-0.5 - (coord[1]-se[1]) / (se[1]-nw[1]))

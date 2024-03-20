@@ -6,18 +6,33 @@ class Meshs{
         this.endx = endx;
         this.endy = endy;
         this.zoom = zoom;
-        this.mesh = [endy-starty][endx - startx];
+        // 
+        this.mesh = new Array(endy-starty+1);
+        for (let i = 0; i < this.endy-this.starty+1; i++) {
+            this.mesh[i] = new Array(endx - startx+1);
+        }
+
+    }
+
+    addMeshToScene(scene){
+        for (let i = 0; i < this.endy-this.starty; i++) {
+            for (let j = 0; j < this.endx - this.startx; j++) {
+                if (this.mesh[i][j]) {
+                    scene.add(this.mesh[i][j]);
+                }
+            }
+        }
     }
     // 设置单一的mesh对象
     // x,y 为tileid
     setMesh(x, y, mesh){
         [x, y] = this.tileIdToArrayId([x, y]);
-        this.mesh[y-this.starty][x-this.startx] = mesh;
+        this.mesh[y][x] = mesh;
     }
     clearAllMesh(){
         for (let i = 0; i < this.endy-this.starty; i++) {
             for (let j = 0; j < this.endx - this.startx; j++) {
-                this.mesh[i][j] = null;
+                disposeObject(this.mesh[i][j]);
             }
         }
     }
@@ -29,7 +44,7 @@ class Meshs{
         for (let i = 0; i < this.endy-this.starty; i++) {
             for (let j = 0; j < this.endx - this.startx; j++) {
                 if(i>=fromY && i<=toY && j>=fromX && j<=toX){
-                    this.mesh[i][j] = null;
+                    disposeObject(this.mesh[i][j]);
                 }
             }
         }
@@ -45,7 +60,7 @@ class Meshs{
         for (let i= arrFromY; i<=arrToY; i++){
             for (let j= arrFromX; j<=arrToX; j++){
                 if(i>=fromY && i<=toY && j>=fromX && j<=toX){
-                    this.mesh[i][j] = null;
+                    disposeObject(this.mesh[i][j]);
                 }
             }
         }
@@ -61,7 +76,7 @@ class Meshs{
                 if(i>=fromY && i<=toY && j>=fromX && j<=toX){
                     continue;
                 } else{
-                    this.mesh[i][j] = null;
+                    disposeObject(this.mesh[i][j]);
                 }
             }
         }
@@ -75,7 +90,7 @@ class Meshs{
                 if(i>=fromY && i<=toY && j>=fromX && j<=toX){
                     continue;
                 } else {
-                    this.mesh[i][j] = null;
+                    disposeObject(this.mesh[i][j]);
                 }
             }
         }
@@ -87,6 +102,18 @@ class Meshs{
     // 数组id到tile id的转换[x,y]到 [tileX,tileY]
     arrayIdToTileId(arrayId){
         return [arrayId[0]+this.startx,arrayId[1]+this.starty];
+    }
+
+    static disposeMaterial(material) {
+        if (material.map) material.map.dispose();
+        material.dispose();
+    }
+
+    static disposeObject(obj) {
+        if (obj.geometry) obj.geometry.dispose();
+        if (obj.material) this.disposeMaterial(obj.material);
+        if (obj.texture) obj.texture.dispose();
+        obj = null;
     }
 }
 

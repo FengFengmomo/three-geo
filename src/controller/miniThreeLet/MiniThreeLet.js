@@ -39,7 +39,7 @@ class MiniThreeLet{
         this.canvas = canvas;
 
         [this.scene, this.camera, this.renderer] =
-            Threelet._initBasics(canvas, actual);
+        MiniThreeLet._initBasics(canvas, actual);
         this.resizeCanvas(true); // first time
         
         // raycasting
@@ -209,7 +209,7 @@ class MiniThreeLet{
     }
 
     resizeCanvas(force=false) {
-        Threelet._resizeCanvasToDisplaySize(
+        MiniThreeLet._resizeCanvasToDisplaySize(
             this.canvas, this.renderer, this.camera, force);
     }
     // https://stackoverflow.com/questions/29884485/threejs-canvas-size-based-on-container
@@ -280,7 +280,7 @@ class MiniThreeLet{
         this.renderer = null;
 
         // recursively release child objects in the scene
-        Threelet.freeScene(this.scene);
+        MiniThreeLet.freeScene(this.scene);
         this.scene = null;
 
         this.camera = null;
@@ -295,10 +295,10 @@ class MiniThreeLet{
 
         // clear objs in the scene
         this.renderer.dispose();
-        Threelet.freeScene(this.scene);
+        MiniThreeLet.freeScene(this.scene);
 
         if (actual.needAxes) {
-            const { walls, axes } = Threelet.createAxes();
+            const { walls, axes } = MiniThreeLet.createAxes();
             this.scene.add(walls, axes);
         }
     }
