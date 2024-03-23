@@ -10,6 +10,9 @@ class Meshs{
         this.mesh = new Array(endy-starty+1);
         for (let i = 0; i < this.endy-this.starty+1; i++) {
             this.mesh[i] = new Array(endx - startx+1);
+            for (let j = 0; j < endx - startx+1; j++) {
+                this.mesh[i][j] = null;
+            }
         }
 
     }

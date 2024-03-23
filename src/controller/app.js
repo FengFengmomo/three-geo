@@ -55,7 +55,12 @@ class App extends Threelet {
         // this.controls.addEventListener('mouse-move', (event) => this.listeners.mouseMove(event));
         // this._controls.addEventListener('wheel', (event) => this.listeners.wheel(event, this.camera.position));
         this.renderer.domElement.addEventListener('wheel', (event)=>{
+            // position的改变
+            // level的改变
             this.listeners.wheel(event, this.camera.position);
+        });
+        this.on('mouse-up', (event) => {
+            this.loding(event, this.camera.position)
         });
         // this.controls.addEventListener('mouse-down-right',this.listeners.mouseDownRight(event));
         // this.controls.addEventListener("mouse-up", (event)=>{this.listeners.mouseUp(event)});

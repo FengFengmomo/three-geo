@@ -40,7 +40,10 @@ class TileController{
             let tileIds = box.filter(id => {
                 return this.filterTile(id, modelBox);
             });
-
+            let unloadTileIds = this.filterTileUnload(tileIds, this.zoomStart);
+            unloadTileIds.forEach(id => {
+                this._lordAddMeshToScene(id);
+            })
         }
     }
     // 对贴图id进行过滤
@@ -55,8 +58,12 @@ class TileController{
         }
     }
     // 再次过滤，过滤出未加载的数据
-    filterTileUnload(){
-
+    filterTileUnload(tileIds, level){
+        let meshs = this.meshMap.get(level);
+        let unloadTileIds = tileIds.filter(id => {
+            return meshs.getMesh(id[0], id[1]) === null;
+        });
+        return unloadTileIds;
     }
     // 清除一定范围的贴图，在缩放和移动时使用
     clearTile(){
