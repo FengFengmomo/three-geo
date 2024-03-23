@@ -18,7 +18,7 @@ const constTilePixels = new SphericalMercator();
 // 3: Array(128) [383, 767, 1151, 1535, ... 48767, 49151]
 class Loader{
     // 模型加载器
-    constructor(upperLeft, lowerRight, refresh, constUnitsSide=1.0){
+    constructor(upperLeft, lowerRight, refresh, constUnitsSide=100.0){
         this.nw = upperLeft;
         this.se = lowerRight;
         this.constUnitsSide = constUnitsSide;

@@ -50,6 +50,24 @@ class Intersect{
         return output;
     }
     /**
+     * 通过屏幕x,y获取经纬度信息
+     * @param {*} mx 
+     * @param {*} my 
+     * @returns 
+     */
+    getLatLngByXY(mx, my){
+        const isect = this.raycastInteractives(mx, my);
+        const pt = isect.point;
+        const coord = this._reverseCoord(1.0, [pt.x, pt.y], [bbox[0], bbox[3]], [bbox[2], bbox[1]]);
+        console.log('corrd:', corrd);
+        console.log('coord:', coord);
+        return llTarget;
+    }
+    // 获取视界内的tile id
+    getBoxByXY(mx, my){
+        
+    }
+    /**
      * 不建议直接调用。
      * @param {*} mx 
      * @param {*} my 

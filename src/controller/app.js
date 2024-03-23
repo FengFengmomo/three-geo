@@ -2,16 +2,16 @@ import Env from './env.js';
 //import Env from './envs-ignore/env-dev.js';
 //import Env from './envs-ignore/env-io.js';
 
-import MiniThreeLet from './miniThreeLet/MiniThreeLet.js';
-// import Threelet from '../../deps/threelet/index.js';
+// import MiniThreeLet from './miniThreeLet/MiniThreeLet.js';
+import Threelet from '../../examples/deps/threelet/index.js';
 import Light from './light.js';
-// import OrbitControls from '../../examples/deps/three/examples/js/controls/OrbitControls.js';
 import TileController from './tileController.js';
+import Listeners from './listener.js';
 
 const { THREE  } = window;
 const { OrbitControls } = THREE;
 
-class App extends MiniThreeLet {
+class App extends Threelet {
     constructor() {
         super({ canvas: document.getElementById('viewer') ,optAxes: false});
     }
@@ -19,7 +19,7 @@ class App extends MiniThreeLet {
     onCreate(_params) { // override
         this.env = Env;
 
-        this.camera.position.set(0, 0, 2); // 摄像机的xyz位置
+        this.camera.position.set(0, 0, 200); // 摄像机的xyz位置
         this.camera.up.set(0, 0, 1); // 摄像头方向，沿着z轴正方向
         this.cameraZoom = this.camera.zoom;
         this.renderer.autoClear = false;
@@ -43,70 +43,47 @@ class App extends MiniThreeLet {
         this.setup('mod-controls', OrbitControls);
         this.render(); // first time
         this.tileController.defaultTile();
-        return;
-        this.controls = new THREE.OrbitControls(this.camera, this.renderer.domElement);
-        this.controls.minPolarAngle = 0;
-        this.controls.maxPolarAngle = Math.PI/3;
-        this.controls.minAzimuthAngle = 0;  
-        this.controls.maxAzimuthAngle = 0; 
+        // this._controls.enablePan = true;
+        // this.controls = new THREE.OrbitControls(this.camera, this.renderer.domElement);
+        this._controls.enablePan = true;
+        this._controls.minPolarAngle = 0;
+        this._controls.maxPolarAngle = Math.PI/3;
+        // this._controls.minAzimuthAngle = 0;  
+        // this._controls.maxAzimuthAngle = 0;
+        // this._controls.enableRotate = true;
 
-        this.controls.addEventListener('mouse-move', (mx, my) => this.pick(mx, my));
-        // this.on('pointer-click', (mx, my) => this.updateMeasure(mx, my));
-        // this.on('pointer-click-right', (mx, my) => {
-            // console.log("click complete");
-            // this.updateOrbit(mx, my)
-        // });
-        // this.renderer.domElement.addEventListener
-        this.controls.addEventListener('wheel', (event) => {
-            return;
-            // this.controls.enableZoom = false;
-            // console.log(event.deltaY);
-            this._delta += event.deltaY;
-            setTimeout(() => {
-                this._delta = 0;
-            }, 1000);
-            console.log(this._delta);
-            if(Math.abs(this._delta) < 600){
-                return;
-            }
-            this.zoom += this._delta>0?-1:1;
-            // this._delta = 0;
-            const target = this.getLatLngByXY(this.currentX, this.currentY); // 获取当前经纬度
-            this.camera.position.set(this.position.x, this.position.y, 0.8);
-            this.camera.lookAt(0,0,0);
-            this.reloadPageWithLocation(target,"unkown");
+        // this.controls.addEventListener('mouse-move', (event) => this.listeners.mouseMove(event));
+        // this._controls.addEventListener('wheel', (event) => this.listeners.wheel(event, this.camera.position));
+        this.renderer.domElement.addEventListener('wheel', (event)=>{
+            this.listeners.wheel(event, this.camera.position);
         });
-        this.controls.addEventListener('mouse-down-right',(mx,my)=>{
-            // 为了实现pane功能，取消场景的左右旋转（因为会有冲突，导致镜头的bug，镜头四处晃）
-            // 初步判定为 maphelper里面，判定摄像机位置和绘图位置出现镜头方向的冲突，镜头方向的更新
-            // 目前情况先禁用旋转以实现拖动的功能。
-            this.fromX = mx;
-            this.fromY = my;
-            this.rightClick = true;
-            console.log("down");
-            console.log(mx,my);
-        });
-        this.controls.addEventListener("mouse-up", (mx,my)=>{
-            return;
-            if(this.rightClick === false){
-                return;
-            }
-            this.rightClick = false;
-            this.distanceX = this.distanceX + mx - this.fromX;
-            this.distanceY = this.distanceY + my - this.fromY;
+        // this.controls.addEventListener('mouse-down-right',this.listeners.mouseDownRight(event));
+        // this.controls.addEventListener("mouse-up", (event)=>{this.listeners.mouseUp(event)});
+    }
+
+    loding(event, position){
+        let delta = event.deltaY;
+        // 设置几个position界定缩放等级
+        // 起始16 或者 18
+        // 在加载贴图时要锁定摄像头position吗？
+        // 采用递归树的方式进行加载
+        // 如：14:级 256，256， 递归加载下级图片：256*2 256*2，256*2+1 256*2， 256*2 256*2+1 ，256*2+1 256*2+1
+        this.zoom += delta>0?-1:1;
+        if(this.zoom<0){
             
-            if(Math.abs(this.distanceX) < this.distanceThreshold && Math.abs(this.distanceY) < this.distanceThreshold){
-                return;
-            }
-            this.distanceX = 0;
-            this.distanceY = 0;
-            const target = this.getLatLngByXY(this.currentX, this.currentY); // 获取当前经纬度
-            this.reloadPageWithLocation(target,"unkown");
-            this.camera.position.set(0, 0, 0.8);
-            
-            console.log("up");
-            console.log(mx,my);
-        });
+        }
+        this.prePosition = position;
+        this.idLording = true;
+        // 开始加载
+        // 禁止缩放
+    }
+    // 放大
+    zoomIn(){
+
+    }
+    // 缩小
+    zoomOut(){
+        
     }
 
     _render() {
@@ -133,8 +110,10 @@ class App extends MiniThreeLet {
         this.addLight();
         //点光初始化结束
         const refresh = () => { this._render(); };
-        this.tileController = new TileController(this.scene, refresh);
-
+        this.lod = new THREE.LOD();
+        this.scene.add(this.lod);
+        this.tileController = new TileController(this.scene,this.lod, refresh);
+        this.listeners = new Listeners();
     }
     
     // 清除灯光
@@ -185,29 +164,8 @@ class App extends MiniThreeLet {
         });
     }
     
-    getLatLngByXY(mx, my){
-        const isect = this.raycastInteractives(mx, my);
-        const pt = isect.point;
-        const { projInv, unitsPerMeter } = this.projection;
-        const llTarget = projInv(pt.x, pt.y);
-        const corrd = proj(llTarget);
-        const coord = this._reverseCoord(1.0, [pt.x, pt.y], [bbox[0], bbox[3]], [bbox[2], bbox[1]]);
     
-        console.log('corrd:', corrd);
-        console.log('coord:', coord);
-        return llTarget;
-    }
-
-    raycastInteractives(mx, my) {
-        return this.loader.interact(meshes => this.raycastFromMouse(mx, my, meshes));
-    }
-    // 选定点并绘制射线
-    pick(mx, my) {
-        this.currentX = mx;
-        this.currentY = my;
-        this.position.copy(this.camera.position);
-        return;
-    }
+    
 }
 
 export default App;
